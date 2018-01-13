@@ -144,8 +144,13 @@ def process_args():
                         help='expand wildcard star imports with undefined '
                              'names')
 
+    # TODO: Simplify by just passing arbitrary options to `autoflake`.
     parser.add_argument('--imports',
                         help='pass to the autoflake "--imports" option')
+
+    parser.add_argument('--no-default-import-removal', action='store_true',
+                        help='pass "--no-default-import-removal" option to'
+                             ' autoflake')
 
     parser.add_argument('--remove-all-unused-imports', action='store_true',
                         help='pass "--remove-all-unused-imports" option to '
@@ -181,6 +186,9 @@ def check(args):
     options = []
     if args.expand_star_imports:
         options.append('--expand-star-imports')
+
+    if args.no_default_import_removal:
+        options.append('--no-default-import-removal')
 
     if args.imports:
         options.append('--imports=' + args.imports)

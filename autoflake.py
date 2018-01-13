@@ -325,16 +325,19 @@ def break_up_import(line):
                     for i in sorted(imports.split(','))])
 
 
-def filter_code(source, additional_imports=None,
+def filter_code(source,
+                additional_imports=None,
+                default_imports=SAFE_IMPORTS,
                 expand_star_imports=False,
                 remove_all_unused_imports=False,
                 remove_duplicate_keys=False,
                 remove_unused_variables=False):
     """Yield code with unused imports removed."""
-    imports = SAFE_IMPORTS
+    imports = default_imports
     if additional_imports:
         imports |= frozenset(additional_imports)
     del additional_imports
+    del default_imports
 
     messages = check(source)
 
@@ -585,8 +588,12 @@ def get_line_ending(line):
         return line[non_whitespace_index:]
 
 
-def fix_code(source, additional_imports=None, expand_star_imports=False,
-             remove_all_unused_imports=False, remove_duplicate_keys=False,
+def fix_code(source,
+             additional_imports=None,
+             default_imports=SAFE_IMPORTS,
+             expand_star_imports=False,
+             remove_all_unused_imports=False,
+             remove_duplicate_keys=False,
              remove_unused_variables=False):
     """Return code with all filtering run on it."""
     if not source:
@@ -604,6 +611,7 @@ def fix_code(source, additional_imports=None, expand_star_imports=False,
                     source,
                     additional_imports=additional_imports,
                     expand_star_imports=expand_star_imports,
+                    default_imports=default_imports,
                     remove_all_unused_imports=remove_all_unused_imports,
                     remove_duplicate_keys=remove_duplicate_keys,
                     remove_unused_variables=remove_unused_variables))))
@@ -627,6 +635,7 @@ def fix_file(filename, args, standard_out):
         source,
         additional_imports=args.imports.split(',') if args.imports else None,
         expand_star_imports=args.expand_star_imports,
+        default_imports=args.default_imports,
         remove_all_unused_imports=args.remove_all_unused_imports,
         remove_duplicate_keys=args.remove_duplicate_keys,
         remove_unused_variables=args.remove_unused_variables)
@@ -776,16 +785,19 @@ def _main(argv, standard_out, standard_error):
     parser.add_argument('--exclude', metavar='globs',
                         help='exclude file/directory names that match these '
                              'comma-separated globs')
-    parser.add_argument('--imports',
-                        help='by default, only unused standard library '
-                             'imports are removed; specify a comma-separated '
-                             'list of additional modules/packages')
     parser.add_argument('--expand-star-imports', action='store_true',
                         help='expand wildcard star imports with undefined '
                              'names; this only triggers if there is only '
                              'one star import in the file; this is skipped if '
                              'there are any uses of `__all__` or `del` in the '
                              'file')
+    parser.add_argument('--imports',
+                        help='by default, only unused standard library '
+                             'imports are removed; specify a comma-separated '
+                             'list of additional modules/packages')
+    parser.add_argument('--no-default-import-removal', action='store_true',
+                        help='do not remove unused imports from standard '
+                             'library')
     parser.add_argument('--remove-all-unused-imports', action='store_true',
                         help='remove all unused imports (not just those from '
                              'the standard library)')
@@ -808,6 +820,9 @@ def _main(argv, standard_out, standard_error):
         args.exclude = _split_comma_separated(args.exclude)
     else:
         args.exclude = set([])
+
+    args.default_imports = (
+        set([]) if args.no_default_import_removal else SAFE_IMPORTS)
 
     filenames = list(set(args.files))
     failure = False
