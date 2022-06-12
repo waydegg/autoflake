@@ -13,3 +13,4 @@ autoflake.egg-info/
 /.coverage
 /pypi_tmp/
 /tmp.*/
+venv
